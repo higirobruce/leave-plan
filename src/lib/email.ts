@@ -1,28 +1,19 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-let transporter: nodemailer.Transporter | null = null;
+let client: Resend | null = null;
 
-function getTransporter() {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
-      secure: Number(process.env.SMTP_PORT) === 465,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+function getClient() {
+  if (!client) {
+    client = new Resend(process.env.RESEND_API_KEY);
   }
-  return transporter;
+  return client;
 }
 
 export async function sendMagicLink(email: string, token: string) {
   const url = `${process.env.APP_URL}/api/auth/verify?token=${token}&email=${encodeURIComponent(email)}`;
 
-  const transporter = getTransporter();
-  await transporter.sendMail({
-    from: process.env.SMTP_USER,
+  await getClient().emails.send({
+    from: process.env.EMAIL_FROM || 'LeavePlan <onboarding@resend.dev>',
     to: email,
     subject: 'Sign in to LeavePlan',
     html: `
